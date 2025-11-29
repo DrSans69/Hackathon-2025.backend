@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from shared.utils import handle_error
 
 from .ai import do
-from .models import Chat, Course, Message
+from .models import Chat, Course, Message, Topic
 from .serializers import (
     ChatCreateSerializer,
     ChatListSerializer,
@@ -16,6 +16,9 @@ from .serializers import (
     CourseSerializer,
     MessageCreateSerializer,
     MessageSerializer,
+    TopicCreateSerializer,
+    TopicListSerializer,
+    TopicSerializer,
 )
 
 
@@ -69,6 +72,74 @@ def get_course(request, course_id):
         return Response(serializer.data)
     except Course.DoesNotExist:
         return Response({"error": "Course not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return handle_error()
+
+
+@api_view(["POST"])
+def create_topic(request):
+    """
+    Create a new topic.
+    """
+    try:
+        serializer = TopicCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            topic = serializer.save()
+            response_serializer = TopicSerializer(topic)
+            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return handle_error()
+
+
+@api_view(["GET"])
+def list_topics(request):
+    """
+    List all topics, optionally filtered by course.
+    """
+    try:
+        topics = Topic.objects.all()
+
+        # Filter by course if provided
+        course_id = request.query_params.get("course")
+        if course_id:
+            topics = topics.filter(course_id=course_id)
+
+        serializer = TopicListSerializer(topics, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        return handle_error()
+
+
+@api_view(["GET"])
+def get_topic(request, topic_id):
+    """
+    Get a specific topic.
+    """
+    try:
+        topic = Topic.objects.get(id=topic_id)
+        serializer = TopicSerializer(topic)
+        return Response(serializer.data)
+    except Topic.DoesNotExist:
+        return Response({"error": "Topic not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return handle_error()
+
+
+@api_view(["PUT", "PATCH"])
+def update_topic(request, topic_id):
+    """
+    Update a topic (including progress and learned_info).
+    """
+    try:
+        topic = Topic.objects.get(id=topic_id)
+        serializer = TopicSerializer(topic, data=request.data, partial=True)
+        if serializer.is_valid():
+            topic = serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except Topic.DoesNotExist:
+        return Response({"error": "Topic not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return handle_error()
 
