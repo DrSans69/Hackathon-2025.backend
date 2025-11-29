@@ -13,7 +13,9 @@ class Course(models.Model):
 
     name = models.CharField(max_length=255)
     description = models.TextField(help_text="General information about the course")
-    main_info = models.TextField(help_text="Main information about the course")
+    main_info = models.TextField(
+        blank=True, help_text="Main information about the course"
+    )
     additional_info = models.TextField(
         blank=True, help_text="Additional information for AI context"
     )

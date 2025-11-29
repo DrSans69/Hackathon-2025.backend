@@ -12,6 +12,6 @@ PyPDF2>=3.0.0
 tiktoken>=0.5.0
 chromadb>=0.4.0
 docx>=0.2.4
-youtube-transcript-api>=25.3
+youtube-transcript-api
 beautifulsoup4>=4.14.2
 psycopg2-binary~=2.9.11
