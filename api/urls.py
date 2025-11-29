@@ -20,6 +20,4 @@ urlpatterns = [
     # Message endpoints
     path("messages/add/", views.add_message, name="add_message"),
     path("messages/send/", views.send_message_with_ai, name="send_message_with_ai"),
-    #
-    path("topic/materials/", views.upload_material),
 ]
