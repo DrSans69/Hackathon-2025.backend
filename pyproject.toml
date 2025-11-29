@@ -19,4 +19,12 @@ dependencies = [
     "tiktoken>=0.5.0",
     "chromadb>=0.4.0",
     "psycopg2-binary~=2.9.11",
+    "langchain>=0.1.0",
+    "langchain-openai>=0.0.5",
+    "langchain-community>=0.0.20",
+    "openai>=1.10.0",
+    "python-dotenv>=1.0.0",
+    "PyPDF2>=3.0.0",  # for PDF processing
+    "tiktoken>=0.5.0",  # for token counting
+    "chromadb>=0.4.0",  # vector store for resources
 ]

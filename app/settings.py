@@ -1,5 +1,14 @@
 from pathlib import Path
 import shared.config as config
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4-turbo-preview')
+EMBEDDING_MODEL = os.getenv('EMBEDDING_MODEL', 'text-embedding-3-small')
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
