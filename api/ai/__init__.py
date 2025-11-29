@@ -1,2 +1,1 @@
-def do():
-    return "Hello from AI module"
+def answer(message: str) -> str: ...

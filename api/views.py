@@ -5,7 +5,7 @@ from rest_framework.response import Response
 
 from shared.utils import handle_error
 
-from .ai import do
+from .ai import answer
 from .models import Chat, Course, Message, Topic
 from .serializers import (
     ChatCreateSerializer,
@@ -20,16 +20,6 @@ from .serializers import (
     TopicListSerializer,
     TopicSerializer,
 )
-
-
-@api_view(["GET"])
-def hello(request):
-    try:
-
-        return Response({"message": do()})
-
-    except Exception as e:
-        return handle_error()
 
 
 @api_view(["POST"])
@@ -251,14 +241,7 @@ def send_message_with_ai(request):
             ],
         }
 
-        # TODO: Call actual AI API based on course.model
-        # For now, use placeholder response
-        if course.model == "gpt":
-            ai_response = f"[GPT Placeholder] Response to: {user_message.content}"  # type: ignore
-        elif course.model == "claude":
-            ai_response = f"[Claude Placeholder] Response to: {user_message.content}"  # type: ignore
-        else:
-            ai_response = f"[Unknown Model] Response to: {user_message.content}"  # type: ignore
+        ai_response = answer(str(context))
 
         # Create AI response message
         ai_message = Message.objects.create(

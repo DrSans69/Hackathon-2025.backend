@@ -3,7 +3,6 @@ from django.urls import include, path
 from . import views
 
 urlpatterns = [
-    path("hello/", views.hello),
     # Course endpoints
     path("courses/", views.list_courses, name="list_courses"),
     path("courses/create/", views.create_course, name="create_course"),
