@@ -33,8 +33,6 @@ class MentorService:
             openai_api_key=settings.OPENAI_API_KEY
         )
         # Modern way to store chat history
-        self.chat_history = InMemoryChatMessageHistory()
-        self.uploaded_materials = []  # Store extracted text from uploads
         self.recommended_sources = []  # Store AI-recommended sources
         self.approved_sources = []  # Store user-approved sources
         
@@ -43,47 +41,154 @@ class MentorService:
     def recommend_resources(
         self, 
         topic: str, 
-        learning_style: str = "mixed"
+        learning_style: str = "mixed",
+        num_resources: int = 7
     ) -> List[Dict]:
         """
-        Recommend external resources for learning.
+        Recommend high-quality external resources with enhanced curation.
+        
+        Args:
+            topic: Learning topic
+            learning_style: visual | reading | interactive | mixed
+            num_resources: Number of resources to recommend (default 7)
+        
+        Returns:
+            List of curated resource recommendations
         """
+        learning_style_context = {
+            "visual": "Prioritize video content, diagrams, and visual explanations",
+            "reading": "Focus on articles, textbooks, and written tutorials",
+            "interactive": "Emphasize interactive exercises, coding playgrounds, and hands-on labs",
+            "mixed": "Provide a balanced mix of videos, articles, and interactive resources"
+        }
+        
         prompt = ChatPromptTemplate.from_messages([
-            ("system", """You are a resource curator. Recommend high-quality learning resources.
+            ("system", f"""You are an expert educational resource curator with deep knowledge of online learning platforms.
+
+            Learning Style Preference: {learning_style} - {learning_style_context.get(learning_style, '')}
+
+            Recommend ONLY from these trusted sources:
             
-            Return ONLY a valid JSON array with this format:
+            VIDEO PLATFORMS:
+            - YouTube channels: Khan Academy, MIT OpenCourseWare, Crash Course, 3Blue1Brown, freeCodeCamp
+            - Coursera, edX, Udacity (free courses)
+            
+            READING MATERIALS:
+            - MDN Web Docs (web development)
+            - GeeksforGeeks, Real Python (programming)
+            - Khan Academy articles
+            - MIT OCW lecture notes
+            - Wikipedia (for overviews)
+            
+            INTERACTIVE:
+            - Codecademy, freeCodeCamp (programming)
+            - Brilliant.org (math/science)
+            - LeetCode, HackerRank (coding practice)
+            
+            Return ONLY valid JSON array:
             [
-            {
-                "title": "resource name",
-                "type": "video",
-                "url": "link or search query",
-                "duration": "estimated time",
-                "difficulty": "beginner",
-                "description": "why this is useful"
-            }
+            {{
+                "title": "specific resource title",
+                "type": "video|article|interactive|pdf|course",
+                "source": "platform name (YouTube, Khan Academy, etc.)",
+                "url": "direct URL or specific search query",
+                "duration": "estimated time (e.g., '15 min', '2 hours', '4 weeks')",
+                "difficulty": "beginner|intermediate|advanced",
+                "description": "why this resource is valuable (2-3 sentences)",
+                "key_topics": ["topic1", "topic2", "topic3"]
+            }}
             ]
 
-            Prioritize:
-            - Reputable sources (Khan Academy, MIT OCW, Coursera, YouTube EDU, etc.)
-            - Free resources when possible
-            - Varied formats (videos, articles, interactive)
-            - Recent content"""),
-                        ("human", """Topic: {topic}
-            Learning style preference: {learning_style}
-
-            Recommend 5-7 resources in JSON format.""")
-                    ])
+            Requirements:
+            - Provide {num_resources} resources
+            - Mix difficulty levels (start easier, progress harder)
+            - Include variety of formats
+            - Use REAL, existing resources (not made-up)
+            - Prefer free resources
+            - Include specific URLs when possible
+            - For YouTube, include channel name and video title"""),
+            ("human", f"""Topic: {topic}
+            
+            Recommend {num_resources} high-quality learning resources in JSON format.""")
+        ])
         
         chain = prompt | self.llm
-        response = chain.invoke({"topic": topic, "learning_style": learning_style})
+        response = chain.invoke({})
         
         parsed = self._parse_json_response(response.content)
         
-        # If parsing failed, return empty list
         if "raw_response" in parsed:
             return []
         
-        return parsed if isinstance(parsed, list) else []
+        resources = parsed if isinstance(parsed, list) else []
+        
+        # Store for potential approval
+        self.recommended_sources = resources
+        
+        return resources
+
+    def parse_external_resources(
+        self,
+        resources: List[Dict],
+        max_content_length: int = 10000
+    ) -> Dict:
+        """
+        Parse content from various external resource types into plain text.
+        
+        Args:
+            resources: List of resource dicts with 'type', 'url', 'title'
+            max_content_length: Maximum characters to extract per resource
+        
+        Returns:
+            Dict with parsed content and metadata
+        """
+        parsed_resources = []
+        
+        for resource in resources:
+            resource_type = resource.get('type', '').lower()
+            url = resource.get('url', '')
+            title = resource.get('title', 'Untitled')
+            
+            try:
+                if resource_type == 'video' and ('youtube.com' in url or 'youtu.be' in url):
+                    content = self._parse_youtube_video(url, max_content_length)
+                    
+                elif resource_type == 'article' or resource_type == 'webpage':
+                    content = self._parse_webpage(url, max_content_length)
+                    
+                elif resource_type == 'pdf' and url:
+                    content = self._parse_pdf_from_url(url, max_content_length)
+                    
+                else:
+                    # Generic web scraping fallback
+                    content = self._parse_webpage(url, max_content_length)
+                
+                if content:
+                    parsed_resources.append({
+                        'title': title,
+                        'type': resource_type,
+                        'url': url,
+                        'content': content,
+                        'word_count': len(content.split()),
+                        'source': resource.get('source', 'Unknown')
+                    })
+                    
+            except Exception as e:
+                print(f"Error parsing {title} ({url}): {e}")
+                parsed_resources.append({
+                    'title': title,
+                    'type': resource_type,
+                    'url': url,
+                    'content': f"[Could not parse content: {str(e)}]",
+                    'error': str(e)
+                })
+        
+        return {
+            'total_resources': len(resources),
+            'successfully_parsed': len([r for r in parsed_resources if 'error' not in r]),
+            'resources': parsed_resources,
+            'total_words': sum(r.get('word_count', 0) for r in parsed_resources)
+        }
     
     
     def process_uploaded_materials(self, files: List[Dict]) -> Dict:
@@ -141,7 +246,7 @@ class MentorService:
                 elif content and ('text' in content_type.lower() or 'txt' in content_type.lower()):
                     text = content.decode('utf-8')
                 
-                # Handle PDF from URL
+                # Handle PDF from URL``
                 elif url and url.endswith('.pdf'):
                     text = self._parse_pdf_from_url(url, max_content_length)
                     if text.startswith('[Could not'):
@@ -156,7 +261,7 @@ class MentorService:
                     continue
                 
                 if text:
-                    self.uploaded_materials.append({
+                    self.approved_sources.append({
                         'filename': filename,
                         'text': text,
                         'word_count': len(text.split()),
@@ -182,9 +287,9 @@ class MentorService:
             'total_files': len(files),
             'failed_files': len(failed_items),
             'failures': failed_items,
-            'materials': self.uploaded_materials,
+            'materials': self.approved_sources,
             'summary': summary,
-            'total_words': sum(m['word_count'] for m in self.uploaded_materials)
+            'total_words': sum(m['word_count'] for m in self.approved_sources)
         }
     
     def generate_topic_name_from_materials(self) -> str:
