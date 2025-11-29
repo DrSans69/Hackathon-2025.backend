@@ -6,11 +6,14 @@ from rest_framework.response import Response
 from shared.utils import handle_error
 
 from .ai import do
-from .models import Chat, Message
+from .models import Chat, Course, Message
 from .serializers import (
     ChatCreateSerializer,
     ChatListSerializer,
     ChatSerializer,
+    CourseCreateSerializer,
+    CourseListSerializer,
+    CourseSerializer,
     MessageCreateSerializer,
     MessageSerializer,
 )
@@ -22,6 +25,50 @@ def hello(request):
 
         return Response({"message": do()})
 
+    except Exception as e:
+        return handle_error()
+
+
+@api_view(["POST"])
+def create_course(request):
+    """
+    Create a new course.
+    """
+    try:
+        serializer = CourseCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            course = serializer.save()
+            response_serializer = CourseSerializer(course)
+            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return handle_error()
+
+
+@api_view(["GET"])
+def list_courses(request):
+    """
+    List all courses.
+    """
+    try:
+        courses = Course.objects.all()
+        serializer = CourseListSerializer(courses, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        return handle_error()
+
+
+@api_view(["GET"])
+def get_course(request, course_id):
+    """
+    Get a specific course.
+    """
+    try:
+        course = Course.objects.get(id=course_id)
+        serializer = CourseSerializer(course)
+        return Response(serializer.data)
+    except Course.DoesNotExist:
+        return Response({"error": "Course not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return handle_error()
 

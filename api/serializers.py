@@ -1,6 +1,60 @@
 from rest_framework import serializers
 
-from .models import Chat, Message
+from .models import Chat, Course, Message
+
+
+class CourseSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Course model.
+    """
+
+    class Meta:
+        model = Course
+        fields = [
+            "id",
+            "name",
+            "description",
+            "main_info",
+            "additional_info",
+            "model",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class CourseCreateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for creating courses.
+    """
+
+    class Meta:
+        model = Course
+        fields = [
+            "name",
+            "description",
+            "main_info",
+            "additional_info",
+            "model",
+        ]
+
+
+class CourseListSerializer(serializers.ModelSerializer):
+    """
+    Serializer for listing courses with minimal fields.
+    """
+
+    class Meta:
+        model = Course
+        fields = [
+            "id",
+            "name",
+            "description",
+            "model",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
 
 
 class ChatSerializer(serializers.ModelSerializer):
