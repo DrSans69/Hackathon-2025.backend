@@ -1,9 +1,9 @@
-from ai.mentor import MentorService
+from .ai.mentor import MentorService
 
 mentor = None
 
 
-def get_accounts_service():
+def get_mentor():
     global mentor
     if mentor is None:
         mentor = MentorService("1")

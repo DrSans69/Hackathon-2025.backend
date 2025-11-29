@@ -3,9 +3,11 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+
 from shared.utils import handle_error
 
 from .ai import do
+from .containers import get_mentor
 from .models import Chat, Course, Message, Topic
 from .serializers import (
     ChatCreateSerializer,
@@ -277,5 +279,49 @@ def send_message_with_ai(request):
             },
             status=status.HTTP_201_CREATED,
         )
+    except Exception as e:
+        return handle_error()
+
+
+@api_view(["POST"])
+def upload_material(request):
+    """
+    Process uploaded materials (files and URLs).
+    Expects:
+    - Files via multipart/form-data
+    - URLs as JSON in request.data['urls']
+    """
+    try:
+        materials = []
+
+        # Get uploaded files from request.FILES
+        for key, uploaded_file in request.FILES.items():
+            materials.append(
+                {
+                    "filename": uploaded_file.name,
+                    "content": uploaded_file.read(),  # bytes
+                    "content_type": uploaded_file.content_type
+                    or "application/octet-stream",
+                }
+            )
+
+        # Get URLs from request.data (JSON)
+        urls = request.data.get("urls", [])
+        for url_item in urls:
+            materials.append(
+                {
+                    "filename": url_item.get("filename", "Unnamed"),
+                    "url": url_item["url"],
+                    "content_type": url_item.get("content_type", "url/webpage"),
+                }
+            )
+
+        # Now process materials
+        # materials is List[dict] as expected
+        mentor = get_mentor()
+
+        a = mentor.process_uploaded_materials(materials)
+
+        return Response({"processed": len(materials)}, status=status.HTTP_200_OK)
     except Exception as e:
         return handle_error()
