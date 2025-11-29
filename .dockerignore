@@ -1,0 +1,109 @@
+# macOS
+.DS_Store
+*.dSYM
+*.dSYM-*
+
+
+# Virtualenv / environment
+.venv/
+.Python
+bin/
+
+# Packaging / build artifacts
+build/
+dist/
+sdist/
+wheels/
+pip-wheel-metadata/
+*.egg-info/
+*.egg
+*.manifest
+*.spec
+.installed.cfg
+
+# Logs, coverage, test output
+**/*.log
+coverage.xml
+*.cover
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.pytest_cache/
+.hypothesis/
+nosetests.xml
+
+# Database / Django
+**/*.sql
+db.sqlite3
+db.sqlite3-journal
+local_settings.py
+instance/
+
+# Secrets / credentials / configs
+**/.env
+**/.env.*
+**/credentials.csv
+
+# Project files / temporary
+**/main
+**/assets/
+**/lab/
+**/reports/
+**/tmp/
+**/tmp.py
+.launch
+
+# Binary/object files
+*.exe
+*.o
+*.so
+*.zip
+
+# Web / scraping / static
+.webassets-cache
+.scrapy
+docs/_build/
+
+# i18n
+*.mo
+*.pot
+
+# IDE
+.vscode/
+
+# Misc
+share/python-wheels/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Python bytecode / caches
+**/__pycache__/
+**/src/__pycache__/
+*.py[cod]
+*$py.class
+
+# Python libs / eggs
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+develop-eggs/
+downloads/
+
+# Node / frontend
+node_modules/
+package-lock.json
+*.lock
+
+# Project specific
+**/ibkr_openssl_keys
+m
+
+# Dockerignore
+.git
+.gitignore
+README
+README.*
