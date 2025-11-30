@@ -39,7 +39,7 @@ class AIAssistant:
         # Direct news request
         if any(keyword in message_lower for keyword in news_keywords):
             return True
-        
+    
         # Check if this is a confirmation/follow-up to a news request
         if conversation_history:
             confirmation_keywords = ['yes', 'yeah', 'sure', 'please', 'go ahead', 'do it', 
@@ -98,7 +98,7 @@ class AIAssistant:
             # Fallback: extract keywords from message
             return {"query": message, "category": "technology", "limit": 5}
     
-    def chat(self, message, conversation_history=None):
+    def chat(self, message, conversation_history=None, model='gpt-4o-mini'):
         """Main chat function with news awareness"""
         if conversation_history is None:
             conversation_history = []
@@ -156,7 +156,7 @@ class AIAssistant:
         
         # Get response
         response = self.client.chat.completions.create(
-            model=self.model,
+            model=model,
             messages=messages,
             temperature=0.7
         )

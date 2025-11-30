@@ -197,54 +197,42 @@ def update_conversation(request, conversation_id):
 def chat(request):
     """
     Handle chat requests. Saves messages to database if user is authenticated.
-    
-    POST /api/chat/
-    Body: { 
-        "message": "user message", 
-        "conversation_id": 1,  // optional, creates new if not provided
-        "history": [...]  // optional, for anonymous users
-    }
     """
     try:
         message = request.data.get('message')
         conversation_id = request.data.get('conversation_id')
         history = request.data.get('history', [])
+        model = request.data.get('model', 'gpt-4o-mini')  # Get model from request
         
         if not message:
             return Response({'error': 'Message is required'}, status=status.HTTP_400_BAD_REQUEST)
         
         conversation = None
         
-        # If user is authenticated, save to database
         if request.user.is_authenticated:
-            # Get or create conversation
             if conversation_id:
                 try:
                     conversation = Conversation.objects.get(id=conversation_id, user=request.user)
                 except Conversation.DoesNotExist:
                     return Response({'error': 'Conversation not found'}, status=status.HTTP_404_NOT_FOUND)
             else:
-                # Create new conversation with first message as title
                 title = message[:50] + "..." if len(message) > 50 else message
                 conversation = Conversation.objects.create(user=request.user, title=title)
             
-            # Save user message
             ChatMessage.objects.create(
                 conversation=conversation,
                 role='user',
                 content=message
             )
             
-            # Build history from database
             history = [
                 {'role': msg.role, 'content': msg.content}
                 for msg in conversation.messages.all()
             ]
         
-        # Get AI response
-        result = assistant.chat(message, history)
+        # Pass model to AI assistant
+        result = assistant.chat(message, history, model=model)
         
-        # Save assistant response if authenticated
         if conversation:
             ChatMessage.objects.create(
                 conversation=conversation,
@@ -252,11 +240,12 @@ def chat(request):
                 content=result['response'],
                 has_news_context=result.get('has_news_context', False)
             )
-            conversation.save()  # Update updated_at timestamp
+            conversation.save()
         
         response_data = {
             'response': result['response'],
-            'has_news_context': result.get('has_news_context', False)
+            'has_news_context': result.get('has_news_context', False),
+            'model': model  # Return which model was used
         }
         
         if conversation:
