@@ -1,35 +1,24 @@
 from django.contrib import admin
-
-from .models import Chat, Course, Message, Topic
-
-
-@admin.register(Course)
-class CourseAdmin(admin.ModelAdmin):
-    list_display = ["name", "model", "created_at", "updated_at"]
-    list_filter = ["model", "created_at"]
-    search_fields = ["name", "description"]
-    readonly_fields = ["created_at", "updated_at"]
+from .models import Conversation, ChatMessage
 
 
-@admin.register(Topic)
-class TopicAdmin(admin.ModelAdmin):
-    list_display = ["name", "course", "progress", "created_at", "updated_at"]
-    list_filter = ["course", "created_at"]
-    search_fields = ["name", "description", "course__name"]
-    readonly_fields = ["created_at", "updated_at"]
+@admin.register(Conversation)
+class ConversationAdmin(admin.ModelAdmin):
+    list_display = ['id', 'title', 'user', 'created_at', 'updated_at']
+    list_filter = ['created_at', 'user']
+    search_fields = ['title', 'user__username']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['-updated_at']
 
 
-@admin.register(Chat)
-class ChatAdmin(admin.ModelAdmin):
-    list_display = ["name", "course", "topic", "created_at", "updated_at"]
-    list_filter = ["course", "topic", "created_at"]
-    search_fields = ["name", "course__name", "topic__name"]
-    readonly_fields = ["created_at", "updated_at"]
-
-
-@admin.register(Message)
-class MessageAdmin(admin.ModelAdmin):
-    list_display = ["chat", "role", "content_type", "order", "created_at"]
-    list_filter = ["role", "content_type", "created_at"]
-    search_fields = ["content", "chat__name"]
-    readonly_fields = ["created_at"]
+@admin.register(ChatMessage)
+class ChatMessageAdmin(admin.ModelAdmin):
+    list_display = ['id', 'conversation', 'role', 'short_content', 'has_news_context', 'created_at']
+    list_filter = ['role', 'has_news_context', 'created_at']
+    search_fields = ['content', 'conversation__title']
+    readonly_fields = ['created_at']
+    ordering = ['-created_at']
+    
+    def short_content(self, obj):
+        return obj.content[:50] + "..." if len(obj.content) > 50 else obj.content
+    short_content.short_description = 'Content'
